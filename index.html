@@ -17,17 +17,16 @@
 </head>
 <body>
     <div id="app">
-        <div id="status" class="label">Scanning Airwaves...</div>
+        <div id="status" class="label">Scanning News...</div>
         <div id="name" class="name"></div>
         <div id="freq" class="freq"></div>
         <div id="meta" class="dist"></div>
-        <button id="refresh-btn" onclick="location.reload()">Update Location</button>
+        <button id="refresh-btn" onclick="location.reload()">Refresh Signal</button>
     </div>
 
     <script>
         window.onload = () => {
             if (navigator.geolocation) {
-                // maximumAge: 0 forces the phone to get a fresh GPS reading, not a cached one.
                 navigator.geolocation.getCurrentPosition(findStation, (err) => {
                     document.getElementById('status').innerText = "GPS Error: " + err.message;
                 }, { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 });
@@ -39,50 +38,59 @@
             const lon = pos.coords.longitude;
             
             try {
-                // Search for NPR-tagged stations within the US
-                const cacheBuster = Date.now();
-                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr&limit=500&cb=${cacheBuster}`);
+                // Fetch up to 500 US stations with 'npr' or 'public' tags
+                const cb = Date.now();
+                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?countrycode=US&name=public&tag=npr&limit=500&cb=${cb}`);
                 const stations = await res.json();
 
-                // UNIVERSAL PRIORITY: These keywords identify "News/Talk" NPR stations vs "Music" NPR stations
-                const newsKeywords = ['news', 'talk', 'information', 'public radio', 'npr news'];
-                const musicKeywords = ['classical', 'jazz', 'music', 'classic'];
+                // High-priority keywords for News/Talk/Information
+                const newsKeywords = ['news', 'talk', 'info', 'wamc', 'whyy', 'wnyc', 'wamu', 'kqed', 'kcrw'];
+                // Lower-priority keywords for Classical/Music
+                const musicKeywords = ['classical', 'jazz', 'music'];
                 
-                let bestMatch = null;
-                let minAdjustedDist = Infinity;
-                let trueDistance = 0;
+                let newsMatches = [];
+                let otherMatches = [];
 
                 stations.forEach(s => {
                     if (s.geo_lat && s.geo_long) {
                         const d = getD(lat, lon, s.geo_lat, s.geo_long);
                         const content = (s.name + s.tags).toLowerCase();
                         
-                        // Scoring Logic:
-                        // 1. News/Talk stations get a 50% distance "bonus" (they seem closer)
-                        // 2. Classical/Music stations get a 20% distance "penalty" (they seem further)
-                        // This pushes News to the top without ignoring Music if it's the only thing available.
-                        let weight = 1.0;
-                        if (newsKeywords.some(k => content.includes(k))) weight = 0.5;
-                        else if (musicKeywords.some(k => content.includes(k))) weight = 1.2;
+                        const isMusic = musicKeywords.some(k => content.includes(k));
+                        const isNews = newsKeywords.some(k => content.includes(k));
 
-                        const adjustedDist = d * weight;
+                        // Store distance and station info
+                        const stationData = { ...s, dist: d };
 
-                        if (adjustedDist < minAdjustedDist) {
-                            minAdjustedDist = adjustedDist;
-                            trueDistance = d;
-                            bestMatch = s;
+                        if (isNews && !isMusic) {
+                            newsMatches.push(stationData);
+                        } else {
+                            otherMatches.push(stationData);
                         }
                     }
                 });
 
-                if (bestMatch) {
+                // Sort both buckets by distance
+                newsMatches.sort((a, b) => a.dist - b.dist);
+                otherMatches.sort((a, b) => a.dist - b.dist);
+
+                // FINAL SELECTION: Give us the closest News station. 
+                // Only show Music if no News station is found within 100 miles.
+                let best = null;
+                if (newsMatches.length > 0 && newsMatches[0].dist < 100) {
+                    best = newsMatches[0];
+                } else {
+                    best = otherMatches[0];
+                }
+
+                if (best) {
                     document.getElementById('status').innerText = "Tune Your Radio To:";
-                    document.getElementById('name').innerText = bestMatch.name.split(/[-|]/)[0].trim();
+                    document.getElementById('name').innerText = best.name.split(/[-|]/)[0].trim();
                     
-                    const fMatch = (bestMatch.name + " " + bestMatch.tags).match(/\d{2,3}\.\d/);
-                    document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Check Dial";
+                    const fMatch = (best.name + " " + best.tags).match(/\d{2,3}\.\d/);
+                    document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Search Dial";
                     
-                    document.getElementById('meta').innerText = `${bestMatch.state || ''} (${trueDistance.toFixed(1)} miles away)`;
+                    document.getElementById('meta').innerText = `${best.state || ''} (${best.dist.toFixed(1)} miles away)`;
                 }
             } catch (e) { 
                 document.getElementById('status').innerText = "Network Error"; 
