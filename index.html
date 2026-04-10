@@ -46,7 +46,12 @@
         .type-tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; vertical-align: middle; margin-left: 5px; }
         .city-state { font-size: 0.9rem; color: #666; }
         .freq { font-size: 2.8rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 2px 0; }
-        .dist { font-size: 0.85rem; font-weight: 700; color: #2d6a4f; }
+        
+        /* Signal Strength Colors */
+        .dist { font-size: 0.85rem; font-weight: 700; }
+        .sig-strong { color: #2d6a4f; } 
+        .sig-fringe { color: #d4a373; }  
+        .sig-weak { color: #888; }      
 
         #startup { text-align: center; width: 100%; }
         .btn-gps { background: var(--blue); color: white; border: none; padding: 18px; border-radius: 40px; font-size: 1.1rem; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 15px; }
@@ -87,7 +92,7 @@
         </div>
     </div>
 
-    <script src="stations.js?v=1.1"></script>
+    <script src="stations.js?v=1.2"></script>
     <script>
         let lat = null, lon = null, mode = 'all';
 
@@ -125,7 +130,7 @@
             document.getElementById('startup').style.display = "none";
             document.getElementById('filters').style.display = "block";
 
-            // 1. Calc Distance for all
+            // 1. Calc Distance
             let list = STATIONS.map(s => {
                 const dLat = (s.lat - lat) * Math.PI / 180;
                 const dLon = (s.lon - lon) * Math.PI / 180;
@@ -139,7 +144,7 @@
             let results = [];
 
             if (mode === 'all') {
-                results = [list[0]]; // Show only the #1 closest station
+                results = [list[0]]; 
             } 
             else if (mode === 'primary') {
                 const primaryOnly = list.filter(s => s.type === "Primary");
@@ -149,20 +154,24 @@
                 const boutiques = list.filter(s => s.type === "Boutique");
                 if (boutiques.length > 0) {
                     const closest = boutiques[0];
-                    // "Tower Farm" Logic: Show closest and any others within 0.2 miles of that tower
-                    results = boutiques.filter(s => s.d <= (closest.d + 0.2));
+                    // Widened tolerance to 0.5 miles to capture the full tower farm
+                    results = boutiques.filter(s => s.d <= (closest.d + 0.5));
                 }
             }
 
             const area = document.getElementById('result-area');
             area.innerHTML = '';
             results.forEach(s => {
+                // Determine signal label and class
+                let sigClass = s.d < 30 ? "sig-strong" : (s.d < 60 ? "sig-fringe" : "sig-weak");
+                let sigLabel = s.d < 30 ? "Strong" : (s.d < 60 ? "Fringe" : "Weak");
+
                 area.innerHTML += `
                     <div class="station-entry">
                         <div class="name">${s.call}<span class="type-tag">${s.type}</span></div>
                         <div class="city-state">${s.city}</div>
                         <div class="freq">${s.freq} FM</div>
-                        <div class="dist">${s.d.toFixed(1)} miles</div>
+                        <div class="dist ${sigClass}">${sigLabel} Signal • ${s.d.toFixed(1)} miles</div>
                     </div>
                 `;
             });
