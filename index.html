@@ -12,6 +12,7 @@
     <style>
         :root { 
             --blue: #003087; --red: #d62828; --bg: #ffffff; --text: #333333; --border: #eeeeee;
+            --sig-green: #2d6a4f; --sig-yellow: #d4a373; --sig-grey: #bbbbbb;
         }
         @media (prefers-color-scheme: dark) {
             :root { --bg: #121212; --text: #e0e0e0; --border: #333333; }
@@ -20,19 +21,12 @@
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; }
         
-        body { 
-            display: flex;
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center;     
-            padding: 20px;
-        }
-
+        body { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
         .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; text-align: center; margin-bottom: 10px; }
         
         #result-area { width: 100%; }
-        .station-entry { padding: 15px 0; border-bottom: 1px solid var(--border); text-align: center; }
+        .station-entry { padding: 15px 0; border-bottom: 1px solid var(--border); text-align: center; position: relative; }
         .station-entry:last-child { border-bottom: none; }
 
         .name { font-size: 2.2rem; font-weight: 900; color: var(--blue); line-height: 1; margin-bottom: 4px; }
@@ -40,10 +34,20 @@
         .city-state { font-size: 0.9rem; color: #666; }
         .freq { font-size: 2.8rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 2px 0; }
         
-        .dist { font-size: 0.85rem; font-weight: 700; }
-        .sig-strong { color: #2d6a4f; } 
-        .sig-fringe { color: #d4a373; }  
-        .sig-weak { color: #888; }      
+        /* Signal Bars Styling */
+        .signal-meter { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 14px; margin-bottom: 5px; }
+        .bar { width: 4px; border-radius: 1px; background: var(--sig-grey); }
+        .bar-1 { height: 4px; } .bar-2 { height: 7px; } .bar-3 { height: 10px; } .bar-4 { height: 14px; }
+        
+        .sig-strong .bar { background: var(--sig-green); }
+        .sig-fringe .bar-4 { background: var(--sig-grey); } 
+        .sig-fringe .bar-1, .sig-fringe .bar-2, .sig-fringe .bar-3 { background: var(--sig-yellow); }
+        .sig-weak .bar-1 { background: var(--sig-red); } /* Optional red bar for weak */
+
+        .dist-text { font-size: 0.85rem; font-weight: 700; margin-top: 4px; }
+        .sig-strong .dist-text { color: var(--sig-green); }
+        .sig-fringe .dist-text { color: var(--sig-yellow); }
+        .sig-weak .dist-text { color: #888; }
 
         #startup { text-align: center; width: 100%; }
         .btn-gps { background: var(--blue); color: white; border: none; padding: 18px; border-radius: 40px; font-size: 1.1rem; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 15px; }
@@ -83,25 +87,15 @@
         </div>
     </div>
 
-    <script src="stations.js?v=1.5"></script>
+    <script src="stations.js?v=1.6"></script>
     <script>
         let lat = null, lon = null, mode = 'all';
-
-        // AUTO-LOAD GPS ON PAGE READY
-        window.onload = () => {
-            if ("geolocation" in navigator) {
-                doGPS();
-            }
-        };
 
         function doGPS() {
             document.getElementById('status').innerText = "Locating...";
             navigator.geolocation.getCurrentPosition(
                 p => { lat = p.coords.latitude; lon = p.coords.longitude; update(); },
-                e => { 
-                    // Fail silently so user can still use the Manual ZIP screen
-                    document.getElementById('status').innerText = "Location Required";
-                },
+                e => { alert("GPS Error."); },
                 { enableHighAccuracy: true, timeout: 5000 }
             );
         }
@@ -142,30 +136,39 @@
             list.sort((a, b) => a.d - b.d);
 
             let results = [];
-            if (mode === 'all') {
-                results = [list[0]]; 
-            } 
+
+            if (mode === 'all') { results = [list[0]]; } 
             else if (mode === 'primary') {
                 const p = list.filter(s => s.type === "Primary");
                 if (p.length > 0) results = [p[0]];
             } 
             else if (mode === 'boutique') {
                 const b = list.filter(s => s.type === "Boutique");
-                results = b.slice(0, 3);
+                if (b.length > 0) {
+                    const top = b[0];
+                    results = b.filter(s => s.d <= (top.d + 1.0));
+                }
             }
 
             const area = document.getElementById('result-area');
             area.innerHTML = '';
             results.forEach(s => {
-                let sigC = s.d < 30 ? "sig-strong" : (s.d < 60 ? "sig-fringe" : "sig-weak");
-                let sigL = s.d < 30 ? "Strong" : (s.d < 60 ? "Fringe" : "Weak");
+                // Signal Logic
+                let sigClass = s.d < 25 ? "sig-strong" : (s.d < 50 ? "sig-fringe" : "sig-weak");
+                let sigText = s.d < 25 ? "Strong" : (s.d < 50 ? "Fringe" : "Weak");
 
                 area.innerHTML += `
-                    <div class="station-entry">
+                    <div class="station-entry ${sigClass}">
+                        <div class="signal-meter">
+                            <div class="bar bar-1"></div>
+                            <div class="bar bar-2"></div>
+                            <div class="bar bar-3"></div>
+                            <div class="bar bar-4"></div>
+                        </div>
                         <div class="name">${s.call}<span class="type-tag">${s.type}</span></div>
                         <div class="city-state">${s.city}</div>
                         <div class="freq">${s.freq} FM</div>
-                        <div class="dist ${sigC}">${sigL} Signal • ${s.d.toFixed(1)} miles</div>
+                        <div class="dist-text">${sigText} Signal • ${s.d.toFixed(1)} miles</div>
                     </div>
                 `;
             });
