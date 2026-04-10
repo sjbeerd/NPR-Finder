@@ -43,7 +43,7 @@
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
             try {
-                const res = await fetch('https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr&hidebroken=true&limit=250');
+                const res = await fetch('https://de1.api.radio-browser.info/json/stations/search?countrycode=US&name=public+radio&tag=npr&tag=public+radio&tag=news&hidebroken=true&order=votes&reverse=true&limit=500');
                 const stations = await res.json();
                 let closest = null;
                 let minD = Infinity;
