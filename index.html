@@ -20,69 +20,68 @@
 
         body { 
             font-family: -apple-system, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
             margin: 0; 
             background: var(--bg); 
             color: var(--text); 
-            transition: background 0.3s ease;
+            display: flex;
+            justify-content: center;
         }
 
         #app { 
-            padding: 20px; 
             width: 100%; 
-            max-width: 400px; 
-            display: flex; 
+            max-width: 420px; 
+            padding: 20px;
+            display: flex;
             flex-direction: column;
-            gap: 15px; /* Consistent spacing */
+            min-height: 100vh;
         }
         
-        .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: bold; }
+        .header-box { margin-bottom: 20px; text-align: center; }
+        .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
         
-        #result-area { width: 100%; }
-        .station-entry { padding: 15px 0; border-bottom: 1px solid var(--border); text-align: center; }
+        #result-area { flex-grow: 0; }
+        .station-entry { padding: 20px 0; border-bottom: 1px solid var(--border); text-align: center; }
         .station-entry:last-child { border-bottom: none; }
 
         .name-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .name { font-size: 2.4rem; font-weight: 900; color: var(--blue); line-height: 1; }
-        .type-tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; opacity: 0.7; }
+        .name { font-size: 2.6rem; font-weight: 900; color: var(--blue); line-height: 1; }
+        .type-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; }
         
-        .city-state { font-size: 1rem; color: #666; margin-top: 4px; }
-        .freq { font-size: 3rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 5px 0; }
-        .dist { font-size: 0.9rem; font-weight: 600; }
+        .city-state { font-size: 1.1rem; color: #666; margin-top: 6px; }
+        .freq { font-size: 3.5rem; font-weight: 200; color: var(--red); letter-spacing: -2px; margin: 5px 0; }
+        .dist { font-size: 0.95rem; font-weight: 700; }
         
         .sig-strong { color: #2d6a4f; } 
         .sig-fringe { color: #d4a373; }  
         .sig-weak { color: #888; }      
 
+        #startup-container { margin: 60px 0; text-align: center; }
+        .btn-gps { background: var(--blue); color: white; border: none; padding: 18px 0; border-radius: 35px; font-size: 1.2rem; font-weight: bold; width: 100%; cursor: pointer; box-shadow: 0 4px 15px rgba(0,48,135,0.2); margin-bottom: 25px; }
+        
+        .zip-row { display: flex; gap: 10px; justify-content: center; align-items: center; }
+        input { padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 1.2rem; width: 110px; text-align: center; background: var(--bg); color: var(--text); -webkit-appearance: none; }
+        .btn-zip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 14px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+
         #filter-container { display: none; margin-top: 10px; }
-        .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 25px; padding: 4px; gap: 4px; }
-        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 2px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 30px; padding: 5px; gap: 5px; }
+        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 12px 0; border-radius: 25px; font-size: 0.75rem; cursor: pointer; font-weight: 700; transition: 0.2s; }
         .filter-btn.active { background: var(--blue); color: white; }
 
-        #startup-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding: 40px 0; }
-        .btn-gps { background: var(--blue); color: white; border: none; padding: 16px 32px; border-radius: 30px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,48,135,0.15); }
-        
-        .zip-row { display: flex; gap: 8px; width: 100%; justify-content: center; }
-        input { padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 1.1rem; width: 120px; text-align: center; background: var(--bg); color: var(--text); }
-        .btn-zip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-
-        .controls { display: none; justify-content: center; margin-top: 15px; }
-        .btn-main { padding: 10px 24px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); font-size: 0.8rem; color: #888; font-weight: 600; cursor: pointer; }
+        .footer-controls { margin-top: 30px; text-align: center; display: none; }
+        .btn-reset { background: none; border: none; color: #bbb; text-decoration: underline; font-size: 0.8rem; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="app">
-        <div id="status" class="label">Ready to Scan</div>
+        <div class="header-box">
+            <div id="status" class="label">Ready to Scan</div>
+        </div>
         
         <div id="startup-container">
-            <button class="btn-gps" onclick="requestGPS()">📍 Use GPS Location</button>
-            <div style="color: #bbb; font-size: 0.8rem; letter-spacing: 1px;">OR ENTER ZIP</div>
+            <button class="btn-gps" onclick="requestGPS()">📍 Use Current Location</button>
             <div class="zip-row">
-                <input type="text" id="zip-input" inputmode="numeric" placeholder="08108" maxlength="5">
-                <button class="btn-zip" onclick="useZip()">Go</button>
+                <input type="text" id="zip-input" inputmode="numeric" placeholder="ZIP" maxlength="5">
+                <button class="btn-zip" onclick="useZip()">Search</button>
             </div>
         </div>
 
@@ -90,13 +89,14 @@
 
         <div id="filter-container">
             <div class="filter-group">
-                <button id="btn-primary" class="filter-btn" onclick="setMode('primary')">Primary Only</button>
-                <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All Stations</button>
-                <button id="btn-boutique" class="filter-btn" onclick="setMode('boutique')">Boutique Only</button>
+                <button id="btn-primary" class="filter-btn" onclick="setMode('primary')">Primary</button>
+                <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All</button>
+                <button id="btn-boutique" class="filter-btn" onclick="setMode('boutique')">Boutique</button>
             </div>
-            <div id="controls" class="controls">
-                <button class="btn-main" onclick="resetApp()">New Search</button>
-            </div>
+        </div>
+
+        <div id="footer" class="footer-controls">
+            <button class="btn-reset" onclick="resetApp()">Clear & Start Over</button>
         </div>
     </div>
 
@@ -117,11 +117,10 @@
                         findSignal();
                     },
                     function(err) {
-                        alert("GPS Error. Please enter a ZIP code.");
+                        alert("Could not get location. Try ZIP code.");
                         resetApp();
                     },
-                    // Switched High Accuracy back ON for precise Collingswood results
-                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             }
         }
@@ -129,23 +128,18 @@
         async function useZip() {
             const zip = document.getElementById('zip-input').value;
             if (zip.length < 5) return;
-            document.getElementById('status').innerText = "Searching ZIP...";
+            document.getElementById('status').innerText = "Checking ZIP...";
             try {
                 const res = await fetch('https://api.zippopotam.us/us/' + zip);
                 const data = await res.json();
                 currentLat = parseFloat(data.places[0].latitude);
                 currentLon = parseFloat(data.places[0].longitude);
                 findSignal();
-            } catch (e) { alert("ZIP not found."); resetApp(); }
+            } catch (e) { alert("ZIP error."); resetApp(); }
         }
 
         function resetApp() {
-            currentLat = null; currentLon = null;
-            document.getElementById('status').innerText = "Ready to Scan";
-            document.getElementById('startup-container').style.display = "flex";
-            document.getElementById('result-area').innerHTML = "";
-            document.getElementById('filter-container').style.display = "none";
-            document.getElementById('controls').style.display = "none";
+            location.reload(); // Hard reset to ensure fresh state
         }
 
         function setMode(mode) {
@@ -156,53 +150,60 @@
         }
 
         function findSignal() {
-            if (!currentLat || !currentLon || typeof STATIONS === 'undefined') return;
+            if (!currentLat || !currentLon) return;
 
             document.getElementById('startup-container').style.display = "none";
             document.getElementById('filter-container').style.display = "block";
-            document.getElementById('controls').style.display = "flex";
+            document.getElementById('footer').style.display = "block";
 
-            let bestStations = [];
-            let minD = 9999;
-
-            let filteredList = STATIONS;
-            if (currentMode === 'primary') filteredList = STATIONS.filter(s => s.type === "Primary");
-            if (currentMode === 'boutique') filteredList = STATIONS.filter(s => s.type === "Boutique");
-
-            filteredList.forEach(s => {
-                const d = getD(currentLat, currentLon, s.lat, s.lon);
-                // Widened tie-breaker to 0.3 miles for tower farm grouping
-                if (d < (minD - 0.3)) {
-                    minD = d;
-                    bestStations = [s];
-                } else if (Math.abs(d - minD) <= 0.3) {
-                    if (currentMode === 'boutique') {
-                        bestStations.push(s);
-                    } else if (bestStations.length === 0) {
-                        bestStations = [s];
-                    }
-                }
+            let stationsWithDist = STATIONS.map(s => {
+                return { ...s, d: getD(currentLat, currentLon, s.lat, s.lon) };
             });
 
-            renderResults(bestStations, minD);
+            // Sort by distance absolute
+            stationsWithDist.sort((a, b) => a.d - b.d);
+
+            let results = [];
+
+            if (currentMode === 'primary') {
+                // Just the single closest Primary station
+                const closest = stationsWithDist.find(s => s.type === "Primary");
+                if (closest) results.push(closest);
+            } 
+            else if (currentMode === 'boutique') {
+                // All Boutique stations within 15 miles
+                results = stationsWithDist.filter(s => s.type === "Boutique" && s.d < 15);
+                // Fallback: If none within 15, just show the single closest boutique
+                if (results.length === 0) {
+                    const closest = stationsWithDist.find(s => s.type === "Boutique");
+                    if (closest) results.push(closest);
+                }
+            } 
+            else {
+                // 'All' mode: Show anything within 8 miles, or just the top 1 closest
+                results = stationsWithDist.filter(s => s.d < 8);
+                if (results.length === 0) results.push(stationsWithDist[0]);
+            }
+
+            renderResults(results);
         }
 
-        function renderResults(stations, distance) {
+        function renderResults(stations) {
             const area = document.getElementById('result-area');
             area.innerHTML = '';
-            document.getElementById('status').innerText = "Found Nearby";
+            document.getElementById('status').innerText = "Nearby Stations";
 
             stations.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'station-entry';
-                let strength = distance < 30 ? "sig-strong" : (distance < 60 ? "sig-fringe" : "sig-weak");
-                let statusTxt = distance < 30 ? "Strong" : (distance < 60 ? "Fringe" : "Weak");
+                let strength = s.d < 30 ? "sig-strong" : (s.d < 60 ? "sig-fringe" : "sig-weak");
+                let statusTxt = s.d < 30 ? "Strong" : (s.d < 60 ? "Fringe" : "Weak");
 
                 div.innerHTML = `
                     <div class="name-container"><div class="name">${s.call}</div><span class="type-tag">${s.type}</span></div>
                     <div class="city-state">${s.city}</div>
                     <div class="freq">${s.freq} FM</div>
-                    <div class="dist ${strength}">${statusTxt} Signal • ${distance.toFixed(1)} miles</div>
+                    <div class="dist ${strength}">${statusTxt} Signal • ${s.d.toFixed(1)} miles</div>
                 `;
                 area.appendChild(div);
             });
