@@ -4,84 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Public Radio Finder</title>
     <style>
         :root { 
             --blue: #003087; --red: #d62828; 
             --bg: #ffffff; --text: #333333; --card: #fafafa; --border: #eeeeee;
         }
-        
         @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #121212; --text: #e0e0e0; --card: #1e1e1e; --border: #333333;
-            }
+            :root { --bg: #121212; --text: #e0e0e0; --card: #1e1e1e; --border: #333333; }
         }
 
+        /* Absolute Centering Fix */
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { 
-            font-family: -apple-system, sans-serif; 
-            margin: 0; 
-            background: var(--bg); 
-            color: var(--text); 
-            display: flex;
-            justify-content: center;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: grid;
+            place-items: center; /* This centers the #app box perfectly */
         }
 
         #app { 
-            width: 100%; 
-            max-width: 420px; 
-            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            text-align: center;
         }
         
-        .header-box { margin-bottom: 20px; text-align: center; }
-        .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
+        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; font-weight: 800; }
         
-        #result-area { flex-grow: 0; }
-        .station-entry { padding: 20px 0; border-bottom: 1px solid var(--border); text-align: center; }
+        /* Result Area with Scrolling if needed */
+        #result-area { 
+            overflow-y: auto; 
+            flex-grow: 1; 
+            margin-bottom: 20px;
+        }
+
+        .station-entry { padding: 15px 0; border-bottom: 1px solid var(--border); }
         .station-entry:last-child { border-bottom: none; }
 
         .name-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .name { font-size: 2.6rem; font-weight: 900; color: var(--blue); line-height: 1; }
-        .type-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; }
+        .name { font-size: 2.2rem; font-weight: 900; color: var(--blue); line-height: 1; }
+        .type-tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; opacity: 0.6; }
         
-        .city-state { font-size: 1.1rem; color: #666; margin-top: 6px; }
-        .freq { font-size: 3.5rem; font-weight: 200; color: var(--red); letter-spacing: -2px; margin: 5px 0; }
-        .dist { font-size: 0.95rem; font-weight: 700; }
+        .city-state { font-size: 0.9rem; color: #666; margin: 4px 0; }
+        .freq { font-size: 2.8rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 0; }
+        .dist { font-size: 0.85rem; font-weight: 700; margin-top: 4px; }
         
         .sig-strong { color: #2d6a4f; } 
         .sig-fringe { color: #d4a373; }  
         .sig-weak { color: #888; }      
 
-        #startup-container { margin: 60px 0; text-align: center; }
-        .btn-gps { background: var(--blue); color: white; border: none; padding: 18px 0; border-radius: 35px; font-size: 1.2rem; font-weight: bold; width: 100%; cursor: pointer; box-shadow: 0 4px 15px rgba(0,48,135,0.2); margin-bottom: 25px; }
+        /* Interface Elements */
+        #startup-container { padding: 20px 0; }
+        .btn-gps { background: var(--blue); color: white; border: none; padding: 18px; border-radius: 40px; font-size: 1.1rem; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 20px; }
         
-        .zip-row { display: flex; gap: 10px; justify-content: center; align-items: center; }
-        input { padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 1.2rem; width: 110px; text-align: center; background: var(--bg); color: var(--text); -webkit-appearance: none; }
-        .btn-zip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 14px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .zip-row { display: flex; gap: 10px; justify-content: center; }
+        input { padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 1.1rem; width: 100px; text-align: center; background: var(--bg); color: var(--text); }
+        .btn-zip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        #filter-container { display: none; margin-top: 10px; }
-        .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 30px; padding: 5px; gap: 5px; }
-        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 12px 0; border-radius: 25px; font-size: 0.75rem; cursor: pointer; font-weight: 700; transition: 0.2s; }
+        #filter-container { display: none; }
+        .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 30px; padding: 4px; gap: 4px; }
+        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 0; border-radius: 25px; font-size: 0.7rem; cursor: pointer; font-weight: 700; }
         .filter-btn.active { background: var(--blue); color: white; }
 
-        .footer-controls { margin-top: 30px; text-align: center; display: none; }
-        .btn-reset { background: none; border: none; color: #bbb; text-decoration: underline; font-size: 0.8rem; cursor: pointer; }
+        .btn-reset { margin-top: 15px; background: none; border: none; color: #888; text-decoration: underline; font-size: 0.75rem; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="app">
-        <div class="header-box">
-            <div id="status" class="label">Ready to Scan</div>
-        </div>
+        <div id="status" class="label">Ready to Scan</div>
         
         <div id="startup-container">
-            <button class="btn-gps" onclick="requestGPS()">📍 Use Current Location</button>
+            <button class="btn-gps" onclick="requestGPS()">📍 Use My Location</button>
             <div class="zip-row">
                 <input type="text" id="zip-input" inputmode="numeric" placeholder="ZIP" maxlength="5">
-                <button class="btn-zip" onclick="useZip()">Search</button>
+                <button class="btn-zip" onclick="useZip()">Go</button>
             </div>
         </div>
 
@@ -93,36 +93,22 @@
                 <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All</button>
                 <button id="btn-boutique" class="filter-btn" onclick="setMode('boutique')">Boutique</button>
             </div>
-        </div>
-
-        <div id="footer" class="footer-controls">
-            <button class="btn-reset" onclick="resetApp()">Clear & Start Over</button>
+            <button class="btn-reset" onclick="location.reload()">Start Over</button>
         </div>
     </div>
 
     <script src="stations.js"></script>
 
     <script>
-        let currentLat = null;
-        let currentLon = null;
-        let currentMode = 'all';
+        let currentLat = null, currentLon = null, currentMode = 'all';
 
         function requestGPS() {
             document.getElementById('status').innerText = "Locating...";
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(pos) {
-                        currentLat = pos.coords.latitude;
-                        currentLon = pos.coords.longitude;
-                        findSignal();
-                    },
-                    function(err) {
-                        alert("Could not get location. Try ZIP code.");
-                        resetApp();
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            }
+            navigator.geolocation.getCurrentPosition(
+                p => { currentLat = p.coords.latitude; currentLon = p.coords.longitude; findSignal(); },
+                e => { alert("GPS failed. Use ZIP."); document.getElementById('status').innerText = "Ready"; },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
         }
 
         async function useZip() {
@@ -135,16 +121,12 @@
                 currentLat = parseFloat(data.places[0].latitude);
                 currentLon = parseFloat(data.places[0].longitude);
                 findSignal();
-            } catch (e) { alert("ZIP error."); resetApp(); }
-        }
-
-        function resetApp() {
-            location.reload(); // Hard reset to ensure fresh state
+            } catch (e) { alert("ZIP not found."); }
         }
 
         function setMode(mode) {
             currentMode = mode;
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('btn-' + mode).classList.add('active');
             findSignal();
         }
@@ -154,56 +136,36 @@
 
             document.getElementById('startup-container').style.display = "none";
             document.getElementById('filter-container').style.display = "block";
-            document.getElementById('footer').style.display = "block";
+            document.getElementById('status').innerText = "Closest Stations";
 
-            let stationsWithDist = STATIONS.map(s => {
-                return { ...s, d: getD(currentLat, currentLon, s.lat, s.lon) };
-            });
+            // 1. Calculate distance for EVERY station
+            let list = STATIONS.map(s => ({...s, d: getD(currentLat, currentLon, s.lat, s.lon)}));
+            
+            // 2. Sort by distance (closest first)
+            list.sort((a, b) => a.d - b.d);
 
-            // Sort by distance absolute
-            stationsWithDist.sort((a, b) => a.d - b.d);
+            // 3. Apply Mode Filter
+            let filtered = list;
+            if (currentMode === 'primary') filtered = list.filter(s => s.type === "Primary");
+            if (currentMode === 'boutique') filtered = list.filter(s => s.type === "Boutique");
 
-            let results = [];
-
-            if (currentMode === 'primary') {
-                // Just the single closest Primary station
-                const closest = stationsWithDist.find(s => s.type === "Primary");
-                if (closest) results.push(closest);
-            } 
-            else if (currentMode === 'boutique') {
-                // All Boutique stations within 15 miles
-                results = stationsWithDist.filter(s => s.type === "Boutique" && s.d < 15);
-                // Fallback: If none within 15, just show the single closest boutique
-                if (results.length === 0) {
-                    const closest = stationsWithDist.find(s => s.type === "Boutique");
-                    if (closest) results.push(closest);
-                }
-            } 
-            else {
-                // 'All' mode: Show anything within 8 miles, or just the top 1 closest
-                results = stationsWithDist.filter(s => s.d < 8);
-                if (results.length === 0) results.push(stationsWithDist[0]);
-            }
-
-            renderResults(results);
+            // 4. Take the top 3 (This ensures WXPN/WRTI both show up)
+            renderResults(filtered.slice(0, 3));
         }
 
         function renderResults(stations) {
             const area = document.getElementById('result-area');
             area.innerHTML = '';
-            document.getElementById('status').innerText = "Nearby Stations";
-
             stations.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'station-entry';
                 let strength = s.d < 30 ? "sig-strong" : (s.d < 60 ? "sig-fringe" : "sig-weak");
                 let statusTxt = s.d < 30 ? "Strong" : (s.d < 60 ? "Fringe" : "Weak");
-
                 div.innerHTML = `
                     <div class="name-container"><div class="name">${s.call}</div><span class="type-tag">${s.type}</span></div>
                     <div class="city-state">${s.city}</div>
                     <div class="freq">${s.freq} FM</div>
-                    <div class="dist ${strength}">${statusTxt} Signal • ${s.d.toFixed(1)} miles</div>
+                    <div class="dist ${strength}">${statusTxt} • ${s.d.toFixed(1)} miles</div>
                 `;
                 area.appendChild(div);
             });
