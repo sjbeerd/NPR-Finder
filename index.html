@@ -28,14 +28,7 @@
             padding: 20px;
         }
 
-        #app { 
-            width: 100%;
-            max-width: 380px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
+        #app { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
         .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; text-align: center; margin-bottom: 10px; }
         
         #result-area { width: 100%; }
@@ -47,7 +40,6 @@
         .city-state { font-size: 0.9rem; color: #666; }
         .freq { font-size: 2.8rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 2px 0; }
         
-        /* Signal Strength Colors */
         .dist { font-size: 0.85rem; font-weight: 700; }
         .sig-strong { color: #2d6a4f; } 
         .sig-fringe { color: #d4a373; }  
@@ -63,7 +55,6 @@
         .filter-group { display: flex; background: rgba(0,0,0,0.05); border-radius: 30px; padding: 4px; gap: 4px; }
         .f-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 0; border-radius: 25px; font-size: 0.7rem; font-weight: 700; }
         .f-btn.active { background: var(--blue); color: white; }
-
         .btn-reset { margin-top: 15px; background: none; border: none; color: #999; text-decoration: underline; font-size: 11px; width: 100%; cursor: pointer; }
     </style>
 </head>
@@ -92,7 +83,7 @@
         </div>
     </div>
 
-    <script src="stations.js?v=1.2"></script>
+    <script src="stations.js?v=1.3"></script>
     <script>
         let lat = null, lon = null, mode = 'all';
 
@@ -130,7 +121,7 @@
             document.getElementById('startup').style.display = "none";
             document.getElementById('filters').style.display = "block";
 
-            // 1. Calc Distance
+            // Universal Haversine Math
             let list = STATIONS.map(s => {
                 const dLat = (s.lat - lat) * Math.PI / 180;
                 const dLon = (s.lon - lon) * Math.PI / 180;
@@ -147,35 +138,34 @@
                 results = [list[0]]; 
             } 
             else if (mode === 'primary') {
-                const primaryOnly = list.filter(s => s.type === "Primary");
-                if (primaryOnly.length > 0) results = [primaryOnly[0]];
+                const p = list.filter(s => s.type === "Primary");
+                if (p.length > 0) results = [p[0]];
             } 
             else if (mode === 'boutique') {
-                const boutiques = list.filter(s => s.type === "Boutique");
-                if (boutiques.length > 0) {
-                    const closest = boutiques[0];
-                    // Widened tolerance to 0.5 miles to capture the full tower farm
-                    results = boutiques.filter(s => s.d <= (closest.d + 0.5));
+                const b = list.filter(s => s.type === "Boutique");
+                if (b.length > 0) {
+                    const top = b[0];
+                    // Strict "At same site" check (within 1 mile)
+                    results = b.filter(s => s.d <= (top.d + 1.0));
                 }
             }
 
             const area = document.getElementById('result-area');
             area.innerHTML = '';
             results.forEach(s => {
-                // Determine signal label and class
-                let sigClass = s.d < 30 ? "sig-strong" : (s.d < 60 ? "sig-fringe" : "sig-weak");
-                let sigLabel = s.d < 30 ? "Strong" : (s.d < 60 ? "Fringe" : "Weak");
+                let sigC = s.d < 30 ? "sig-strong" : (s.d < 60 ? "sig-fringe" : "sig-weak");
+                let sigL = s.d < 30 ? "Strong" : (s.d < 60 ? "Fringe" : "Weak");
 
                 area.innerHTML += `
                     <div class="station-entry">
                         <div class="name">${s.call}<span class="type-tag">${s.type}</span></div>
                         <div class="city-state">${s.city}</div>
                         <div class="freq">${s.freq} FM</div>
-                        <div class="dist ${sigClass}">${sigLabel} Signal • ${s.d.toFixed(1)} miles</div>
+                        <div class="dist ${sigC}">${sigL} Signal • ${s.d.toFixed(1)} miles</div>
                     </div>
                 `;
             });
-            document.getElementById('status').innerText = "Found Nearby";
+            document.getElementById('status').innerText = "Results for Location";
         }
     </script>
 </body>
