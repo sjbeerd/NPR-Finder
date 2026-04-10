@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NPR Finder</title>
     <style>
-        :root { --npr-blue: #003087; --npr-red: #d62828; }
-        body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; background: #fff; }
+        :root { --blue: #003087; --red: #d62828; }
+        body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; background: #fff; color: #333; }
         #app { padding: 20px; width: 100%; }
         .label { font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-        .name { font-size: 2.5rem; font-weight: 900; color: var(--npr-blue); margin: 15px 0; line-height: 1.1; }
-        .freq { font-size: 3.5rem; font-weight: 300; color: var(--npr-red); }
+        .name { font-size: 2.2rem; font-weight: 900; color: var(--blue); margin: 15px 0; }
+        .freq { font-size: 4rem; font-weight: 300; color: var(--red); }
         .dist { font-size: 1rem; color: #bbb; margin-top: 20px; }
     </style>
 </head>
@@ -25,9 +25,9 @@
     <script>
         window.onload = () => {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(findStation, () => {
-                    document.getElementById('status').innerText = "Please enable GPS";
-                }, { enableHighAccuracy: true });
+                navigator.geolocation.getCurrentPosition(findStation, (err) => {
+                    document.getElementById('status').innerText = "Location Error: " + err.message;
+                }, { enableHighAccuracy: true, timeout: 5000 });
             }
         };
 
@@ -36,34 +36,34 @@
             const lon = pos.coords.longitude;
             
             try {
-                // Fetch 100 closest stations globally
-                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?lat=${lat}&long=${lon}&limit=100&hidebroken=true&order=distance`);
+                // FORCE THE API to only look at US stations with the tag "npr"
+                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr&limit=500`);
                 const stations = await res.json();
 
-                // Keywords for NPR/Public Radio
-                const keywords = ['npr', 'public radio', 'wamc', 'whyy', 'wnyc', 'wamu', 'wync', 'public broadcasting'];
-                
-                // Filter the list to find the BEST match nearby
-                let matches = stations.filter(s => {
-                    const data = (s.name + s.tags).toLowerCase();
-                    return keywords.some(k => data.includes(k));
+                let closest = null;
+                let minD = Infinity;
+
+                // MANUALLY calculate distance to every US NPR station to find the winner
+                stations.forEach(s => {
+                    if (s.geo_lat && s.geo_long) {
+                        const d = getD(lat, lon, s.geo_lat, s.geo_long);
+                        if (d < minD) {
+                            minD = d;
+                            closest = s;
+                        }
+                    }
                 });
 
-                // Pick the closest NPR match. If none found in top 100, take the absolute closest.
-                let best = matches.length > 0 ? matches[0] : stations[0];
-
-                if (best) {
+                if (closest) {
                     document.getElementById('status').innerText = "Tune Your Radio To:";
-                    document.getElementById('name').innerText = best.name.split(/[-|]/)[0].trim();
+                    document.getElementById('name').innerText = closest.name.split(/[-|]/)[0].trim();
                     
-                    // Improved Frequency Finder
-                    const fMatch = (best.name + " " + best.tags).match(/\d{2,3}\.\d/);
+                    const fMatch = (closest.name + " " + closest.tags).match(/\d{2,3}\.\d/);
                     document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Search Dial";
                     
-                    const d = getD(lat, lon, best.geo_lat, best.geo_long);
-                    document.getElementById('meta').innerText = `${best.state || ''} (${d.toFixed(1)} miles away)`;
+                    document.getElementById('meta').innerText = `${closest.state || ''} (${minD.toFixed(1)} miles away)`;
                 }
-            } catch (e) { document.getElementById('status').innerText = "Search Failed"; }
+            } catch (e) { document.getElementById('status').innerText = "API Error"; }
         }
 
         function getD(lat1, lon1, lat2, lon2) {
