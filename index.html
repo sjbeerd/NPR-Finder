@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NPR Finder: ME to VA</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Public Radio Finder</title>
     <style>
         :root { --blue: #003087; --red: #d62828; }
         body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; background: #fff; color: #333; }
@@ -11,22 +12,37 @@
         .label { font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 2px; }
         .name { font-size: 2.8rem; font-weight: 900; color: var(--blue); margin: 15px 0; line-height: 1.1; }
         .freq { font-size: 4.5rem; font-weight: 200; color: var(--red); letter-spacing: -1px; }
-        .dist { font-size: 1rem; color: #bbb; margin-top: 20px; }
-        button { margin-top: 30px; padding: 12px 24px; border-radius: 25px; border: 1px solid #eee; background: #fafafa; font-size: 0.8rem; color: #666; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dist { font-size: 1rem; color: #bbb; margin-top: 10px; }
+        
+        /* Zip Code Fallback Styles */
+        #zip-container { margin-top: 20px; display: none; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; width: 120px; text-align: center; }
+        .btn-main { margin-top: 20px; padding: 12px 24px; border-radius: 25px; border: 1px solid #eee; background: #fafafa; font-size: 0.8rem; color: #666; font-weight: 600; cursor: pointer; }
+        .btn-zip { background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 8px; margin-left: 5px; }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="status" class="label">Pinging Satellites...</div>
-        <div id="name" class="name"></div>
-        <div id="freq" class="freq"></div>
-        <div id="meta" class="dist"></div>
-        <button onclick="location.reload()">Refresh Signal</button>
+        
+        <div id="result-area">
+            <div id="name" class="name"></div>
+            <div id="freq" class="freq"></div>
+            <div id="meta" class="dist"></div>
+        </div>
+
+        <div id="zip-container">
+            <p style="color:#666; font-size: 0.9rem;">Location unavailable. Enter ZIP code:</p>
+            <input type="number" id="zip-input" placeholder="e.g. 08108" pattern="\d*">
+            <button class="btn-zip" onclick="useZip()">Go</button>
+        </div>
+
+        <button class="btn-main" onclick="location.reload()">Refresh Signal</button>
     </div>
 
     <script>
         const STATIONS = [
-            // --- NEW ENGLAND (ME, NH, VT, MA, RI, CT) ---
+            // (Previous list remains the same internally)
             {"call":"WMEA","freq":"90.1","lat":43.66,"lon":-70.25,"city":"Portland, ME"},
             {"call":"WMEP","freq":"90.5","lat":44.80,"lon":-68.77,"city":"Bangor, ME"},
             {"call":"WMEW","freq":"91.3","lat":44.31,"lon":-69.77,"city":"Waterville, ME"},
@@ -41,8 +57,6 @@
             {"call":"WFCR","freq":"88.5","lat":42.38,"lon":-72.52,"city":"Amherst, MA"},
             {"call":"WNPN","freq":"89.3","lat":41.82,"lon":-71.41,"city":"Providence, RI"},
             {"call":"WNPR","freq":"90.5","lat":41.76,"lon":-72.67,"city":"Hartford, CT"},
-
-            // --- MID-ATLANTIC (NY, NJ, PA, DE, MD, DC) ---
             {"call":"WNYC","freq":"93.9","lat":40.74,"lon":-73.98,"city":"New York, NY"},
             {"call":"WAMC","freq":"90.3","lat":42.50,"lon":-73.91,"city":"Albany, NY"},
             {"call":"WAMC","freq":"91.7","lat":41.72,"lon":-73.91,"city":"Poughkeepsie, NY"},
@@ -56,8 +70,6 @@
             {"call":"WYPR","freq":"88.1","lat":39.29,"lon":-76.61,"city":"Baltimore, MD"},
             {"call":"WSDL","freq":"90.7","lat":38.36,"lon":-75.59,"city":"Ocean City, MD"},
             {"call":"WAMU","freq":"88.5","lat":38.93,"lon":-77.08,"city":"Washington, DC"},
-
-            // --- SOUTHERN TIER (VA, WV) ---
             {"call":"WVTF","freq":"89.1","lat":37.19,"lon":-80.15,"city":"Roanoke, VA"},
             {"call":"WVTU","freq":"89.3","lat":38.03,"lon":-78.47,"city":"Charlottesville, VA"},
             {"call":"WRIQ","freq":"89.7","lat":37.33,"lon":-77.10,"city":"Richmond, VA"},
@@ -69,15 +81,43 @@
 
         window.onload = () => {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(findSignal, (err) => {
-                    document.getElementById('status').innerText = "GPS Error: Check Permission";
-                }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => findSignal(pos.coords.latitude, pos.coords.longitude),
+                    () => showZipFallback(),
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else {
+                showZipFallback();
             }
         };
 
-        function findSignal(pos) {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
+        function showZipFallback() {
+            document.getElementById('status').innerText = "Location Blocked";
+            document.getElementById('zip-container').style.display = "block";
+            document.getElementById('result-area').style.opacity = "0.3";
+        }
+
+        async function useZip() {
+            const zip = document.getElementById('zip-input').value;
+            if (zip.length < 5) return alert("Enter a 5-digit ZIP");
+
+            try {
+                // Using a free, no-key-required API to get lat/lon from zip
+                const res = await fetch(`https://api.zippopotam.us/us/${zip}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                const lat = parseFloat(data.places[0].latitude);
+                const lon = parseFloat(data.places[0].longitude);
+                
+                document.getElementById('zip-container').style.display = "none";
+                document.getElementById('result-area').style.opacity = "1";
+                findSignal(lat, lon);
+            } catch (e) {
+                alert("ZIP code not found. Try another?");
+            }
+        }
+
+        function findSignal(lat, lon) {
             let best = null;
             let minD = Infinity;
 
@@ -90,10 +130,10 @@
             });
 
             if (best) {
-                document.getElementById('status').innerText = "Strongest News Signal:";
+                document.getElementById('status').innerText = "Public Radio Finder";
                 document.getElementById('name').innerText = best.call;
                 document.getElementById('freq').innerText = best.freq + " FM";
-                document.getElementById('meta').innerText = `${best.city} (${minD.toFixed(1)} miles away)`;
+                document.getElementById('meta').innerText = `${best.city} (${minD.toFixed(1)} miles)`;
             }
         }
 
