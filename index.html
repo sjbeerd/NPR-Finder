@@ -17,7 +17,7 @@
 </head>
 <body>
     <div id="app">
-        <div id="status" class="label">Pinging NPR...</div>
+        <div id="status" class="label">Scanning Airwaves...</div>
         <div id="name" class="name"></div>
         <div id="freq" class="freq"></div>
         <div id="meta" class="dist"></div>
@@ -27,53 +27,61 @@
     <script>
         window.onload = () => {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(findNPRStation, (err) => {
+                navigator.geolocation.getCurrentPosition(findStation, (err) => {
                     document.getElementById('status').innerText = "GPS Error: " + err.message;
                 }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
             }
         };
 
-        async function findNPRStation(pos) {
+        async function findStation(pos) {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
-            
-            try {
-                // Using the official NPR station finder API logic
-                // This fetches stations near your coordinates directly from NPR's database
-                const url = `https://secure.npr.org/getStations?lat=${lat}&lon=${lon}`;
-                const response = await fetch(url);
-                const data = await response.json();
+            const cb = Date.now();
 
-                // The NPR API returns an array called 'stations'
-                // We filter for stations where the primary genre is News or News/Talk
-                const allStations = data.stations || [];
-                
-                let bestMatch = allStations.find(s => {
-                    const genre = (s.market_type || "").toLowerCase();
-                    const title = (s.name || "").toLowerCase();
-                    // Avoid anything that explicitly labels itself as Classical
-                    return !title.includes('classical') && !title.includes('music');
+            try {
+                // Fetching from a reliable open mirror of the radio database
+                const url = `https://de1.api.radio-browser.info/json/stations/search?countrycode=US&limit=500&hidebroken=true&order=distance&lat=${lat}&long=${lon}&cb=${cb}`;
+                const res = await fetch(url);
+                const stations = await res.json();
+
+                // 1. Filter for Public Radio / NPR keywords
+                // 2. STERNLY exclude "Classical" or "Music" stations to avoid the WMHT trap
+                const newsKeywords = ['npr', 'public', 'news', 'talk', 'information'];
+                const musicKeywords = ['classical', 'jazz', 'music', 'classic', 'mellow'];
+
+                let matches = stations.filter(s => {
+                    const data = (s.name + " " + s.tags).toLowerCase();
+                    const hasNews = newsKeywords.some(k => data.includes(k));
+                    const hasMusic = musicKeywords.some(k => data.includes(k));
+                    return hasNews && !hasMusic;
                 });
 
-                // Fallback to the first station if no "News" specific filter hit
-                if (!bestMatch) bestMatch = allStations[0];
+                // If we found a News station, take the closest. 
+                // Otherwise, take the absolute closest station as a fallback.
+                const best = matches.length > 0 ? matches[0] : stations[0];
 
-                if (bestMatch) {
+                if (best) {
                     document.getElementById('status').innerText = "Tune Your Radio To:";
-                    document.getElementById('name').innerText = bestMatch.call || bestMatch.name;
+                    document.getElementById('name').innerText = best.name.split(/[-|]/)[0].trim();
                     
-                    // NPR API provides the frequency directly in the 'frequency' field
-                    const frequency = bestMatch.frequency || "Check Dial";
-                    const band = bestMatch.band || "FM";
-                    document.getElementById('freq').innerText = `${frequency} ${band}`;
+                    // Extract frequency (e.g., 91.7)
+                    const fMatch = (best.name + " " + best.tags).match(/\d{2,3}\.\d/);
+                    document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Check Dial";
                     
-                    document.getElementById('meta').innerText = `${bestMatch.city}, ${bestMatch.state}`;
-                } else {
-                    document.getElementById('status').innerText = "No NPR Station Found Nearby";
+                    const d = calculateDistance(lat, lon, best.geo_lat, best.geo_long);
+                    document.getElementById('meta').innerText = `${best.state || ''} (${d.toFixed(1)} miles away)`;
                 }
             } catch (e) {
-                document.getElementById('status').innerText = "NPR API Connection Error";
+                document.getElementById('status').innerText = "Database Error";
             }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 3958.8;
+            const dLat = (lat2-lat1) * Math.PI/180;
+            const dLon = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
     </script>
 </body>
