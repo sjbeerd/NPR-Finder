@@ -1,29 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NPR Finder</title>
-    <style>
-        :root { --blue: #003087; --red: #d62828; }
-        body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; background: #fff; }
-        #app { padding: 20px; width: 100%; }
-        .label { font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-        .name { font-size: 2.2rem; font-weight: 900; color: var(--blue); margin: 15px 0; }
-        .freq { font-size: 4rem; font-weight: 300; color: var(--red); }
-        .dist { font-size: 1rem; color: #bbb; margin-top: 20px; }
-        #refresh-btn { margin-top: 25px; padding: 12px 24px; border-radius: 25px; border: 1px solid #eee; background: #fafafa; font-size: 0.8rem; color: #666; font-weight: 600; }
-    </style>
-</head>
-<body>
-    <div id="app">
-        <div id="status" class="label">Finding Nearest News...</div>
-        <div id="name" class="name"></div>
-        <div id="freq" class="freq"></div>
-        <div id="meta" class="dist"></div>
-        <button id="refresh-btn" onclick="location.reload()">Refresh Signal</button>
-    </div>
-
     <script>
         window.onload = () => {
             if (navigator.geolocation) {
@@ -36,56 +10,58 @@
         async function findStation(pos) {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
+            const cb = Date.now();
             
             try {
-                const cb = Date.now();
-                // Search globally within the US for NPR-style content
-                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr&limit=500&cb=${cb}`);
-                const stations = await res.json();
+                // STEP 1: Search for 'News' or 'Talk' tags specifically within the US
+                const newsUrl = `https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=news,talk&limit=200&cb=${cb}`;
+                // STEP 2: Search for 'NPR' or 'Public Radio' tags as a fallback
+                const fallbackUrl = `https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr,public%20radio&limit=200&cb=${cb}`;
 
-                // Purely functional keywords (No regional call signs)
-                const newsKeywords = ['news', 'talk', 'info', 'public radio', 'npr news', 'information'];
-                const musicKeywords = ['classical', 'jazz', 'music', 'classic'];
+                const [newsRes, fallbackRes] = await Promise.all([fetch(newsUrl), fetch(fallbackUrl)]);
+                const newsStations = await newsRes.json();
+                const fallbackStations = await fallbackRes.json();
+
+                // Merge and filter for unique entries
+                const allStations = [...newsStations, ...fallbackStations];
                 
-                let newsMatches = [];
-                let otherMatches = [];
+                let primaryQueue = [];
+                let secondaryQueue = [];
 
-                stations.forEach(s => {
+                allStations.forEach(s => {
                     if (s.geo_lat && s.geo_long) {
                         const d = getD(lat, lon, s.geo_lat, s.geo_long);
-                        const content = (s.name + s.tags).toLowerCase();
+                        const tags = (s.tags || "").toLowerCase();
+                        const name = s.name.toLowerCase();
+
+                        // Logic: If it's explicitly music (classical/jazz), send to secondary
+                        const isMusic = tags.includes('classical') || tags.includes('jazz') || name.includes('classical');
                         
-                        const isMusic = musicKeywords.some(k => content.includes(k));
-                        const isNews = newsKeywords.some(k => content.includes(k));
-
-                        const stationData = { ...s, dist: d };
-
-                        // Separate News-first stations from Music-first stations
-                        if (isNews && !isMusic) {
-                            newsMatches.push(stationData);
+                        if (!isMusic) {
+                            primaryQueue.push({ ...s, dist: d });
                         } else {
-                            otherMatches.push(stationData);
+                            secondaryQueue.push({ ...s, dist: d });
                         }
                     }
                 });
 
-                // Sort both by distance
-                newsMatches.sort((a, b) => a.dist - b.dist);
-                otherMatches.sort((a, b) => a.dist - b.dist);
+                // Sort by distance
+                primaryQueue.sort((a, b) => a.dist - b.dist);
+                secondaryQueue.sort((a, b) => a.dist - b.dist);
 
-                // Priority: Use the closest News station if it's within 150 miles
-                let best = (newsMatches.length > 0 && newsMatches[0].dist < 150) 
-                           ? newsMatches[0] 
-                           : otherMatches[0];
+                // FINAL SELECTION: 
+                // We will take the closest non-music station within a 200-mile range.
+                // If nothing is found, we fall back to the closest music-public station.
+                let best = (primaryQueue.length > 0 && primaryQueue[0].dist < 200) 
+                           ? primaryQueue[0] 
+                           : secondaryQueue[0];
 
                 if (best) {
                     document.getElementById('status').innerText = "Tune Your Radio To:";
-                    // Display the station name and strip unnecessary metadata
                     document.getElementById('name').innerText = best.name.split(/[-|]/)[0].trim();
                     
-                    // Regex to find frequency numbers (e.g., 91.7)
-                    const fMatch = (best.name + " " + best.tags).match(/\d{2,3}\.\d/);
-                    document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Search Dial";
+                    const fMatch = (best.name + " " + (best.tags || "")).match(/\d{2,3}\.\d/);
+                    document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Check Dial";
                     
                     document.getElementById('meta').innerText = `${best.state || ''} (${best.dist.toFixed(1)} miles away)`;
                 }
@@ -95,12 +71,10 @@
         }
 
         function getD(lat1, lon1, lat2, lon2) {
-            const R = 3958.8; // Earth radius in miles
+            const R = 3958.8;
             const dLat = (lat2-lat1) * Math.PI/180;
             const dLon = (lon2-lon1) * Math.PI/180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
     </script>
-</body>
-</html>
