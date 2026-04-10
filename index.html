@@ -25,7 +25,7 @@
         #app { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
         .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; text-align: center; margin-bottom: 10px; }
         
-        #result-area { width: 100%; }
+        #result-area { width: 100%; min-height: 200px; }
         .station-entry { padding: 15px 0; border-bottom: 1px solid var(--border); text-align: center; }
         .station-entry:last-child { border-bottom: none; }
 
@@ -34,20 +34,15 @@
         .city-state { font-size: 0.9rem; color: #666; }
         .freq { font-size: 2.8rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 2px 0; }
         
-        /* Signal Bars Styling */
         .signal-meter { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 14px; margin-bottom: 8px; }
-        .bar { width: 4px; border-radius: 1px; background: var(--sig-grey); transition: background 0.3s ease; }
+        .bar { width: 4px; border-radius: 1px; background: var(--sig-grey); }
         .bar-1 { height: 4px; } .bar-2 { height: 7px; } .bar-3 { height: 10px; } .bar-4 { height: 14px; }
         
-        /* Color Overrides based on Station Entry Class */
         .sig-strong .bar { background: var(--sig-green); }
         .sig-strong .dist-text { color: var(--sig-green); }
-
         .sig-fringe .bar-1, .sig-fringe .bar-2, .sig-fringe .bar-3 { background: var(--sig-yellow); }
-        .sig-fringe .bar-4 { background: var(--sig-grey); }
         .sig-fringe .dist-text { color: var(--sig-yellow); }
-
-        .sig-weak .bar-1 { background: #d62828; } /* Small red hint for weak */
+        .sig-weak .bar-1 { background: #d62828; }
         .sig-weak .dist-text { color: #888; }
 
         .dist-text { font-size: 0.85rem; font-weight: 700; margin-top: 4px; }
@@ -90,7 +85,7 @@
         </div>
     </div>
 
-    <script src="stations.js?v=1.7"></script>
+    <script src="stations.js?v=1.9"></script>
     <script>
         let lat = null, lon = null, mode = 'all';
 
@@ -124,10 +119,10 @@
 
         function update() {
             if (!lat || !lon) return;
-
             document.getElementById('startup').style.display = "none";
             document.getElementById('filters').style.display = "block";
 
+            // Map distances using the Haversine formula
             let list = STATIONS.map(s => {
                 const dLat = (s.lat - lat) * Math.PI / 180;
                 const dLon = (s.lon - lon) * Math.PI / 180;
@@ -136,30 +131,23 @@
                 return { ...s, d: d };
             });
 
+            // Sort list by absolute closest distance
             list.sort((a, b) => a.d - b.d);
 
             let results = [];
-
             if (mode === 'all') { 
                 results = [list[0]]; 
-            } 
-            else if (mode === 'primary') {
+            } else if (mode === 'primary') {
                 const p = list.filter(s => s.type === "Primary");
                 if (p.length > 0) results = [p[0]];
-            } 
-            else if (mode === 'boutique') {
-                const b = list.filter(s => s.type === "Boutique");
-                if (b.length > 0) {
-                    const top = b[0];
-                    // Multi-result logic for same tower/site (within 1 mile)
-                    results = b.filter(s => s.d <= (top.d + 1.0));
-                }
+            } else if (mode === 'boutique') {
+                // Return exactly the three closest Boutique stations
+                results = list.filter(s => s.type === "Boutique").slice(0, 3);
             }
 
             const area = document.getElementById('result-area');
             area.innerHTML = '';
             results.forEach(s => {
-                // Determine signal class
                 let sClass = s.d < 25 ? "sig-strong" : (s.d < 50 ? "sig-fringe" : "sig-weak");
                 let sText = s.d < 25 ? "Strong" : (s.d < 50 ? "Fringe" : "Weak");
 
@@ -178,7 +166,7 @@
                     </div>
                 `;
             });
-            document.getElementById('status').innerText = "Results for Location";
+            document.getElementById('status').innerText = "Nearby Results";
         }
     </script>
 </body>
