@@ -18,56 +18,71 @@
             }
         }
 
-        body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; background: var(--bg); color: var(--text); transition: background 0.3s ease; overflow: hidden; }
-        #app { padding: 20px; width: 100%; max-width: 400px; height: 90vh; display: flex; flex-direction: column; }
+        body { 
+            font-family: -apple-system, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            transition: background 0.3s ease;
+        }
+
+        #app { 
+            padding: 20px; 
+            width: 100%; 
+            max-width: 400px; 
+            display: flex; 
+            flex-direction: column;
+            gap: 15px; /* Consistent spacing */
+        }
         
-        .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; flex-shrink: 0; font-weight: bold; }
+        .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: bold; }
         
-        #result-area { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 10px 0; min-height: 100px; }
-        .station-entry { padding: 20px 0; border-bottom: 1px solid var(--border); }
+        #result-area { width: 100%; }
+        .station-entry { padding: 15px 0; border-bottom: 1px solid var(--border); text-align: center; }
         .station-entry:last-child { border-bottom: none; }
 
-        .name-container { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .name { font-size: 2.8rem; font-weight: 900; color: var(--blue); line-height: 1.1; }
-        .type-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; opacity: 0.7; color: var(--text); }
+        .name-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .name { font-size: 2.4rem; font-weight: 900; color: var(--blue); line-height: 1; }
+        .type-tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; opacity: 0.7; }
         
-        .city-state { font-size: 1.1rem; color: #666; font-weight: 500; margin-bottom: 5px; }
-        .freq { font-size: 3.5rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 0; }
-        .dist { font-size: 1rem; margin-top: 5px; font-weight: 600; }
+        .city-state { font-size: 1rem; color: #666; margin-top: 4px; }
+        .freq { font-size: 3rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 5px 0; }
+        .dist { font-size: 0.9rem; font-weight: 600; }
         
         .sig-strong { color: #2d6a4f; } 
         .sig-fringe { color: #d4a373; }  
         .sig-weak { color: #888; }      
 
-        #filter-container { margin: 15px 0; flex-shrink: 0; display: none; }
+        #filter-container { display: none; margin-top: 10px; }
         .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 25px; padding: 4px; gap: 4px; }
-        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 2px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 2px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; font-weight: 600; transition: all 0.2s; }
         .filter-btn.active { background: var(--blue); color: white; }
 
-        /* Startup & Fallback UI */
-        #startup-container { margin: auto; display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; justify-content: center; height: 100%; }
+        #startup-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding: 40px 0; }
+        .btn-gps { background: var(--blue); color: white; border: none; padding: 16px 32px; border-radius: 30px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,48,135,0.15); }
         
-        .btn-gps { background: var(--blue); color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 80%; max-width: 250px; box-shadow: 0 4px 10px rgba(0,48,135,0.2); }
-        .btn-gps:active { transform: scale(0.98); }
+        .zip-row { display: flex; gap: 8px; width: 100%; justify-content: center; }
+        input { padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 1.1rem; width: 120px; text-align: center; background: var(--bg); color: var(--text); }
+        .btn-zip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        .zip-row { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; }
-        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1.1rem; width: 120px; text-align: center; background: var(--bg); color: var(--text); outline: none; }
-        .btn-zip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
-        .controls { display: flex; justify-content: center; margin-top: 10px; flex-shrink: 0; display: none; }
-        .btn-main { padding: 10px 20px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); font-size: 0.8rem; color: var(--text); font-weight: 600; cursor: pointer; }
+        .controls { display: none; justify-content: center; margin-top: 15px; }
+        .btn-main { padding: 10px 24px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); font-size: 0.8rem; color: #888; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="app">
-        <div id="status" class="label">READY TO SCAN</div>
+        <div id="status" class="label">Ready to Scan</div>
         
         <div id="startup-container">
             <button class="btn-gps" onclick="requestGPS()">📍 Use GPS Location</button>
-            <div style="color: #888; font-size: 0.9rem; margin: 10px 0;">— or —</div>
+            <div style="color: #bbb; font-size: 0.8rem; letter-spacing: 1px;">OR ENTER ZIP</div>
             <div class="zip-row">
-                <input type="text" id="zip-input" inputmode="numeric" pattern="[0-9]*" placeholder="ZIP Code" maxlength="5">
-                <button class="btn-zip" onclick="useZip()">Search</button>
+                <input type="text" id="zip-input" inputmode="numeric" placeholder="08108" maxlength="5">
+                <button class="btn-zip" onclick="useZip()">Go</button>
             </div>
         </div>
 
@@ -79,10 +94,9 @@
                 <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All Stations</button>
                 <button id="btn-boutique" class="filter-btn" onclick="setMode('boutique')">Boutique Only</button>
             </div>
-        </div>
-
-        <div id="controls" class="controls">
-            <button class="btn-main" onclick="resetApp()">Start Over</button>
+            <div id="controls" class="controls">
+                <button class="btn-main" onclick="resetApp()">New Search</button>
+            </div>
         </div>
     </div>
 
@@ -93,103 +107,75 @@
         let currentLon = null;
         let currentMode = 'all';
 
-        // Called when user explicitly taps the GPS button
         function requestGPS() {
-            document.getElementById('status').innerText = "REQUESTING LOCATION...";
-            document.getElementById('startup-container').style.display = "none";
-            
-            try {
-                if ('geolocation' in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        function(pos) {
-                            currentLat = pos.coords.latitude;
-                            currentLon = pos.coords.longitude;
-                            findSignal();
-                        },
-                        function(err) {
-                            alert("Location access denied or unavailable. Please use ZIP code.");
-                            resetApp();
-                        },
-                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-                    );
-                } else {
-                    alert("Your browser does not support Geolocation.");
-                    resetApp();
-                }
-            } catch (e) {
-                alert("An error occurred starting GPS.");
-                resetApp();
+            document.getElementById('status').innerText = "Locating...";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        currentLat = pos.coords.latitude;
+                        currentLon = pos.coords.longitude;
+                        findSignal();
+                    },
+                    function(err) {
+                        alert("GPS Error. Please enter a ZIP code.");
+                        resetApp();
+                    },
+                    // Switched High Accuracy back ON for precise Collingswood results
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                );
             }
         }
 
         async function useZip() {
             const zip = document.getElementById('zip-input').value;
-            if (zip.length < 5) {
-                alert("Please enter a valid 5-digit ZIP code.");
-                return;
-            }
-            
-            document.getElementById('status').innerText = "SEARCHING ZIP...";
-            document.getElementById('startup-container').style.display = "none";
-
+            if (zip.length < 5) return;
+            document.getElementById('status').innerText = "Searching ZIP...";
             try {
                 const res = await fetch('https://api.zippopotam.us/us/' + zip);
-                if (!res.ok) throw new Error("Invalid ZIP");
                 const data = await res.json();
                 currentLat = parseFloat(data.places[0].latitude);
                 currentLon = parseFloat(data.places[0].longitude);
                 findSignal();
-            } catch (e) { 
-                alert("Could not find that ZIP code. Try again.");
-                resetApp();
-            }
+            } catch (e) { alert("ZIP not found."); resetApp(); }
         }
 
         function resetApp() {
-            currentLat = null;
-            currentLon = null;
-            document.getElementById('status').innerText = "READY TO SCAN";
+            currentLat = null; currentLon = null;
+            document.getElementById('status').innerText = "Ready to Scan";
             document.getElementById('startup-container').style.display = "flex";
             document.getElementById('result-area').innerHTML = "";
             document.getElementById('filter-container').style.display = "none";
             document.getElementById('controls').style.display = "none";
-            document.getElementById('zip-input').value = "";
         }
 
         function setMode(mode) {
             currentMode = mode;
-            document.querySelectorAll('.filter-btn').forEach(function(btn) {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('btn-' + mode).classList.add('active');
             findSignal();
         }
 
         function findSignal() {
-            if (!currentLat || !currentLon) return;
+            if (!currentLat || !currentLon || typeof STATIONS === 'undefined') return;
 
-            if (typeof STATIONS === 'undefined') {
-                document.getElementById('status').innerText = "ERROR: STATIONS DATA MISSING";
-                return;
-            }
+            document.getElementById('startup-container').style.display = "none";
+            document.getElementById('filter-container').style.display = "block";
+            document.getElementById('controls').style.display = "flex";
 
             let bestStations = [];
-            let minD = 999999;
+            let minD = 9999;
 
             let filteredList = STATIONS;
-            if (currentMode === 'primary') {
-                filteredList = STATIONS.filter(function(s) { return s.type === "Primary"; });
-            } else if (currentMode === 'boutique') {
-                filteredList = STATIONS.filter(function(s) { return s.type === "Boutique"; });
-            }
+            if (currentMode === 'primary') filteredList = STATIONS.filter(s => s.type === "Primary");
+            if (currentMode === 'boutique') filteredList = STATIONS.filter(s => s.type === "Boutique");
 
-            filteredList.forEach(function(s) {
+            filteredList.forEach(s => {
                 const d = getD(currentLat, currentLon, s.lat, s.lon);
-                
-                if (d < (minD - 0.1)) {
+                // Widened tie-breaker to 0.3 miles for tower farm grouping
+                if (d < (minD - 0.3)) {
                     minD = d;
                     bestStations = [s];
-                } else if (Math.abs(d - minD) <= 0.1) {
+                } else if (Math.abs(d - minD) <= 0.3) {
                     if (currentMode === 'boutique') {
                         bestStations.push(s);
                     } else if (bestStations.length === 0) {
@@ -204,44 +190,29 @@
         function renderResults(stations, distance) {
             const area = document.getElementById('result-area');
             area.innerHTML = '';
-            document.getElementById('status').innerText = "PUBLIC RADIO FINDER";
-            document.getElementById('filter-container').style.display = "block";
-            document.getElementById('controls').style.display = "flex";
+            document.getElementById('status').innerText = "Found Nearby";
 
-            if (stations.length === 0) {
-                area.innerHTML = "<div style='margin-top:40px; color:#888;'>No stations found in this category.</div>";
-                return;
-            }
-
-            stations.forEach(function(s) {
+            stations.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'station-entry';
-                
-                let strength = "sig-weak";
-                let statusTxt = "Weak Signal";
-                if (distance < 30) { strength = "sig-strong"; statusTxt = "Strong Signal"; }
-                else if (distance < 60) { strength = "sig-fringe"; statusTxt = "Fringe Signal"; }
+                let strength = distance < 30 ? "sig-strong" : (distance < 60 ? "sig-fringe" : "sig-weak");
+                let statusTxt = distance < 30 ? "Strong" : (distance < 60 ? "Fringe" : "Weak");
 
                 div.innerHTML = `
-                    <div class="name-container">
-                        <div class="name">${s.call}</div>
-                        <span class="type-tag">${s.type}</span>
-                    </div>
+                    <div class="name-container"><div class="name">${s.call}</div><span class="type-tag">${s.type}</span></div>
                     <div class="city-state">${s.city}</div>
                     <div class="freq">${s.freq} FM</div>
-                    <div class="dist ${strength}">${statusTxt} • ${distance.toFixed(1)} miles</div>
+                    <div class="dist ${strength}">${statusTxt} Signal • ${distance.toFixed(1)} miles</div>
                 `;
                 area.appendChild(div);
             });
         }
 
-        // Changed ** to Math.pow() for bulletproof legacy compatibility
         function getD(lat1, lon1, lat2, lon2) {
             const R = 3958.8;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.pow(Math.sin(dLat / 2), 2) + 
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.pow(Math.sin(dLon / 2), 2);
+            const a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.pow(Math.sin(dLon / 2), 2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
     </script>
