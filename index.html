@@ -83,15 +83,25 @@
         </div>
     </div>
 
-    <script src="stations.js?v=1.4"></script>
+    <script src="stations.js?v=1.5"></script>
     <script>
         let lat = null, lon = null, mode = 'all';
+
+        // AUTO-LOAD GPS ON PAGE READY
+        window.onload = () => {
+            if ("geolocation" in navigator) {
+                doGPS();
+            }
+        };
 
         function doGPS() {
             document.getElementById('status').innerText = "Locating...";
             navigator.geolocation.getCurrentPosition(
                 p => { lat = p.coords.latitude; lon = p.coords.longitude; update(); },
-                e => { alert("GPS Error."); },
+                e => { 
+                    // Fail silently so user can still use the Manual ZIP screen
+                    document.getElementById('status').innerText = "Location Required";
+                },
                 { enableHighAccuracy: true, timeout: 5000 }
             );
         }
@@ -121,7 +131,6 @@
             document.getElementById('startup').style.display = "none";
             document.getElementById('filters').style.display = "block";
 
-            // Universal Distance Math
             let list = STATIONS.map(s => {
                 const dLat = (s.lat - lat) * Math.PI / 180;
                 const dLon = (s.lon - lon) * Math.PI / 180;
@@ -130,11 +139,9 @@
                 return { ...s, d: d };
             });
 
-            // Sort everything by distance (closest first)
             list.sort((a, b) => a.d - b.d);
 
             let results = [];
-
             if (mode === 'all') {
                 results = [list[0]]; 
             } 
@@ -144,7 +151,6 @@
             } 
             else if (mode === 'boutique') {
                 const b = list.filter(s => s.type === "Boutique");
-                // Take the top 3 closest boutiques regardless of distance
                 results = b.slice(0, 3);
             }
 
