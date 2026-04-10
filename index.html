@@ -22,7 +22,7 @@
         #app { padding: 20px; width: 100%; max-width: 400px; height: 90vh; display: flex; flex-direction: column; }
         .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; flex-shrink: 0; }
         
-        #result-area { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 10px 0; }
+        #result-area { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 10px 0; min-height: 100px; }
         .station-entry { padding: 20px 0; border-bottom: 1px solid var(--border); }
         .station-entry:last-child { border-bottom: none; }
 
@@ -38,7 +38,7 @@
         .sig-fringe { color: #d4a373; }  
         .sig-weak { color: #888; }      
 
-        #filter-container { margin: 15px 0; flex-shrink: 0; }
+        #filter-container { margin: 15px 0; flex-shrink: 0; display: none; }
         .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 25px; padding: 4px; gap: 4px; }
         .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 2px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
         .filter-btn.active { background: var(--blue); color: white; }
@@ -48,17 +48,16 @@
         
         .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px; flex-shrink: 0; }
         .btn-main { padding: 12px 28px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); font-size: 0.85rem; color: var(--text); font-weight: 600; cursor: pointer; width: 180px; }
-        .btn-zip { background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 8px; margin-left: 8px; font-weight: bold; }
+        .btn-zip { background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 8px; margin-left: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="status" class="label">Locating Signal...</div>
         
-        <div id="result-area">
-            </div>
+        <div id="result-area"></div>
 
-        <div id="filter-container" style="display:none;">
+        <div id="filter-container">
             <div class="filter-group">
                 <button id="btn-primary" class="filter-btn" onclick="setMode('primary')">Primary Only</button>
                 <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All Stations</button>
@@ -84,19 +83,35 @@
         let currentLat = null;
         let currentLon = null;
         let currentMode = 'all';
+        let geoTimeout = null;
 
         window.onload = refreshSignal;
 
         function refreshSignal() {
+            // UI Reset
+            document.getElementById('status').innerText = "Locating Signal...";
+            document.getElementById('zip-container').style.display = "none";
+            document.getElementById('filter-container').style.display = "none";
+            document.getElementById('result-area').innerHTML = "";
+
+            // Set a 4-second "Safety Timer"
+            geoTimeout = setTimeout(() => {
+                if (!currentLat) showZipFallback();
+            }, 4000);
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
+                        clearTimeout(geoTimeout);
                         currentLat = pos.coords.latitude;
                         currentLon = pos.coords.longitude;
                         findSignal();
                     },
-                    () => showZipFallback(),
-                    { enableHighAccuracy: true, timeout: 6000 }
+                    () => {
+                        clearTimeout(geoTimeout);
+                        showZipFallback();
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
                 );
             } else {
                 showZipFallback();
@@ -113,6 +128,7 @@
         function showZipFallback() {
             document.getElementById('status').innerText = "Location Offline";
             document.getElementById('zip-container').style.display = "block";
+            document.getElementById('filter-container').style.display = "none";
         }
 
         async function useZip() {
@@ -129,10 +145,27 @@
         }
 
         function findSignal() {
-            if (!currentLat || !currentLon || typeof STATIONS === 'undefined') return;
+            if (!currentLat || !currentLon) return;
+
+            // Safety check for stations.js
+            if (typeof STATIONS === 'undefined') {
+                document.getElementById('status').innerText = "Data Error: stations.js not found";
+                return;
+            }
 
             let bestStations = [];
             let minD = Infinity;
 
             let filteredList = STATIONS;
-            if (current
+            if (currentMode === 'primary') {
+                filteredList = STATIONS.filter(s => s.type === "Primary");
+            } else if (currentMode === 'boutique') {
+                filteredList = STATIONS.filter(s => s.type === "Boutique");
+            }
+
+            filteredList.forEach(s => {
+                const d = getD(currentLat, currentLon, s.lat, s.lon);
+                if (d < (minD - 0.1)) {
+                    minD = d;
+                    bestStations = [s];
+                } else if (Math.abs(d - minD) <= 0
