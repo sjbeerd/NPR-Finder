@@ -23,11 +23,12 @@
     </div>
 
     <script>
+        // Cache-buster: Ensures the browser checks for new data every time
         window.onload = () => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(findStation, (err) => {
-                    document.getElementById('status').innerText = "Location Error: " + err.message;
-                }, { enableHighAccuracy: true, timeout: 5000 });
+                    document.getElementById('status').innerText = "GPS Error. Check Settings.";
+                }, { enableHighAccuracy: true, timeout: 10000 });
             }
         };
 
@@ -36,19 +37,27 @@
             const lon = pos.coords.longitude;
             
             try {
-                // FORCE THE API to only look at US stations with the tag "npr"
-                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr&limit=500`);
+                // Fetch US NPR tagged stations
+                const res = await fetch(`https://de1.api.radio-browser.info/json/stations/search?countrycode=US&tag=npr&limit=500&cachebust=${Date.now()}`);
                 const stations = await res.json();
 
+                // Priority keywords to find News/Talk over Classical
+                const priority = ['wamc', 'whyy', 'wnyc', 'wamu', 'news', 'talk'];
+                
                 let closest = null;
                 let minD = Infinity;
 
-                // MANUALLY calculate distance to every US NPR station to find the winner
                 stations.forEach(s => {
                     if (s.geo_lat && s.geo_long) {
-                        const d = getD(lat, lon, s.geo_lat, s.geo_long);
-                        if (d < minD) {
-                            minD = d;
+                        let d = getD(lat, lon, s.geo_lat, s.geo_long);
+                        
+                        // Boost stations that match our priority keywords (WAMC, News, etc.)
+                        const isPriority = priority.some(p => (s.name + s.tags).toLowerCase().includes(p));
+                        const effectiveDistance = isPriority ? d * 0.5 : d; 
+
+                        if (effectiveDistance < minD) {
+                            minD = effectiveDistance;
+                            trueDistance = d;
                             closest = s;
                         }
                     }
@@ -61,7 +70,7 @@
                     const fMatch = (closest.name + " " + closest.tags).match(/\d{2,3}\.\d/);
                     document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Search Dial";
                     
-                    document.getElementById('meta').innerText = `${closest.state || ''} (${minD.toFixed(1)} miles away)`;
+                    document.getElementById('meta').innerText = `${closest.state || ''} (${trueDistance.toFixed(1)} miles away)`;
                 }
             } catch (e) { document.getElementById('status').innerText = "API Error"; }
         }
