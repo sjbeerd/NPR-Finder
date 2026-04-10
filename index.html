@@ -44,40 +44,41 @@
             const lon = pos.coords.longitude;
             
             try {
-                // NEW STRATEGY: Ask the API for stations within a radius of your GPS
-                // This fetches the 50 closest stations to YOU, regardless of tags.
-                const url = `https://de1.api.radio-browser.info/json/stations/search?lat=${lat}&long=${lon}&limit=50&hidebroken=true&order=distance`;
-                
+                // Fetch the 100 closest stations to your current GPS
+                const url = `https://de1.api.radio-browser.info/json/stations/search?lat=${lat}&long=${lon}&limit=100&hidebroken=true&order=distance`;
                 const res = await fetch(url);
                 const stations = await res.json();
 
-                // Look through those 50 closest stations for common Public Radio keywords
-                const publicRadioKeywords = ['npr', 'public', 'wamc', 'whyy', 'wnyc', 'waze', 'wamu', 'university', 'college'];
+                // Nationwide Public Radio identifiers
+                const publicKeywords = ['npr', 'public radio', 'public broadcasting', 'news/talk', 'university', 'college'];
                 
+                // 1. Try to find the closest station that is explicitly Public Radio
                 let bestMatch = stations.find(s => {
-                    const name = s.name.toLowerCase();
-                    const tags = s.tags.toLowerCase();
-                    return publicRadioKeywords.some(keyword => name.includes(keyword) || tags.includes(keyword));
+                    const content = (s.name + s.tags).toLowerCase();
+                    return publicKeywords.some(k => content.includes(k));
                 });
 
-                // Fallback: If no "Public" keywords found, just show the absolute closest station
-                if (!bestMatch && stations.length > 0) {
-                    bestMatch = stations[0];
-                }
+                // 2. If no "Public" match, fallback to the absolute closest station
+                if (!bestMatch) bestMatch = stations[0];
 
                 if (bestMatch) {
-                    document.getElementById('status').innerText = "Closest Station Found:";
-                    document.getElementById('name').innerText = bestMatch.name;
-                    document.getElementById('freq').innerText = bestMatch.state || "Public Radio";
+                    document.getElementById('status').innerText = "Tune Your Radio To:";
                     
-                    // Recalculate distance for the display
+                    // Look for a frequency (e.g., 91.7 or 103.9) in the name or tags
+                    const freqMatch = (bestMatch.name + " " + bestMatch.tags).match(/\d{2,3}\.\d/);
+                    const frequency = freqMatch ? freqMatch[0] : "Check Dial";
+
+                    // Clean up the name (remove stream URLs or extra dashes)
+                    const cleanName = bestMatch.name.split(/[-|]/)[0].trim();
+
+                    document.getElementById('name').innerText = cleanName;
+                    document.getElementById('freq').innerText = `${frequency} FM`;
+                    
                     const d = getD(lat, lon, bestMatch.geo_lat, bestMatch.geo_long);
-                    document.getElementById('meta').innerText = `${d.toFixed(1)} miles away`;
-                } else {
-                    document.getElementById('status').innerText = "No stations found nearby.";
+                    document.getElementById('meta').innerText = `Near ${bestMatch.state || 'Current Location'} (${d.toFixed(1)} miles away)`;
                 }
             } catch (e) { 
-                document.getElementById('status').innerText = "API Connection Error."; 
+                document.getElementById('status').innerText = "Searching..."; 
             }
         }
 
