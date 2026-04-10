@@ -6,18 +6,26 @@
     <title>NPR Finder</title>
     <style>
         :root { --blue: #003087; --red: #d62828; }
-        body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; background: #fff; color: #333; }
+        body { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            display: flex; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; text-align: center; background: #fff; color: #333; 
+        }
         #app { padding: 20px; width: 100%; max-width: 400px; }
         .label { font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-        .name { font-size: 2.2rem; font-weight: 900; color: var(--blue); margin: 15px 0; line-height: 1.1; }
-        .freq { font-size: 4rem; font-weight: 300; color: var(--red); }
-        .dist { font-size: 1rem; color: #bbb; margin-top: 20px; }
-        button { margin-top: 30px; padding: 12px 24px; border-radius: 25px; border: 1px solid #eee; background: #fafafa; font-size: 0.8rem; color: #666; font-weight: 600; cursor: pointer; }
+        .name { font-size: 2.8rem; font-weight: 900; color: var(--blue); margin: 15px 0; line-height: 1.1; }
+        .freq { font-size: 4.5rem; font-weight: 200; color: var(--red); letter-spacing: -1px; }
+        .dist { font-size: 1rem; color: #bbb; margin-top: 20px; font-weight: 400; }
+        button { 
+            margin-top: 30px; padding: 12px 24px; border-radius: 25px; 
+            border: 1px solid #eee; background: #fafafa; font-size: 0.8rem; 
+            color: #666; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <div id="status" class="label">Scanning Airwaves...</div>
+        <div id="status" class="label">Pinging Satellites...</div>
         <div id="name" class="name"></div>
         <div id="freq" class="freq"></div>
         <div id="meta" class="dist"></div>
@@ -25,59 +33,55 @@
     </div>
 
     <script>
+        // This looks for the stations.json file in the same folder as this index.html
+        const DATA_URL = "stations.json"; 
+
         window.onload = () => {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(findStation, (err) => {
+                // maximumAge: 0 ensures we get a fresh GPS lock every time the app opens
+                navigator.geolocation.getCurrentPosition(findSignal, (err) => {
                     document.getElementById('status').innerText = "GPS Error: " + err.message;
-                }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+                }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
             }
         };
 
-        async function findStation(pos) {
+        async function findSignal(pos) {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
-            const cb = Date.now();
 
             try {
-                // Fetching from a reliable open mirror of the radio database
-                const url = `https://de1.api.radio-browser.info/json/stations/search?countrycode=US&limit=500&hidebroken=true&order=distance&lat=${lat}&long=${lon}&cb=${cb}`;
-                const res = await fetch(url);
-                const stations = await res.json();
+                // Fetch the static station database
+                const response = await fetch(DATA_URL);
+                if (!response.ok) throw new Error("File not found");
+                const stations = await response.json();
+                
+                let best = null;
+                let minD = Infinity;
 
-                // 1. Filter for Public Radio / NPR keywords
-                // 2. STERNLY exclude "Classical" or "Music" stations to avoid the WMHT trap
-                const newsKeywords = ['npr', 'public', 'news', 'talk', 'information'];
-                const musicKeywords = ['classical', 'jazz', 'music', 'classic', 'mellow'];
-
-                let matches = stations.filter(s => {
-                    const data = (s.name + " " + s.tags).toLowerCase();
-                    const hasNews = newsKeywords.some(k => data.includes(k));
-                    const hasMusic = musicKeywords.some(k => data.includes(k));
-                    return hasNews && !hasMusic;
+                // Calculate which station is physically closest to your current location
+                stations.forEach(s => {
+                    const d = getD(lat, lon, s.lat, s.lon);
+                    if (d < minD) {
+                        minD = d;
+                        best = s;
+                    }
                 });
 
-                // If we found a News station, take the closest. 
-                // Otherwise, take the absolute closest station as a fallback.
-                const best = matches.length > 0 ? matches[0] : stations[0];
-
                 if (best) {
-                    document.getElementById('status').innerText = "Tune Your Radio To:";
-                    document.getElementById('name').innerText = best.name.split(/[-|]/)[0].trim();
-                    
-                    // Extract frequency (e.g., 91.7)
-                    const fMatch = (best.name + " " + best.tags).match(/\d{2,3}\.\d/);
-                    document.getElementById('freq').innerText = fMatch ? fMatch[0] + " FM" : "Check Dial";
-                    
-                    const d = calculateDistance(lat, lon, best.geo_lat, best.geo_long);
-                    document.getElementById('meta').innerText = `${best.state || ''} (${d.toFixed(1)} miles away)`;
+                    document.getElementById('status').innerText = "Strongest News Signal:";
+                    document.getElementById('name').innerText = best.call;
+                    document.getElementById('freq').innerText = best.freq + " FM";
+                    document.getElementById('meta').innerText = `${best.city} (${minD.toFixed(1)} miles away)`;
                 }
             } catch (e) {
-                document.getElementById('status').innerText = "Database Error";
+                document.getElementById('status').innerText = "Database Offline";
+                console.error(e);
             }
         }
 
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 3958.8;
+        // Haversine formula for calculating distance on a sphere
+        function getD(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Radius of the Earth in miles
             const dLat = (lat2-lat1) * Math.PI/180;
             const dLon = (lon2-lon1) * Math.PI/180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
