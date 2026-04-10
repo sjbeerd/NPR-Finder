@@ -22,33 +22,32 @@
         #app { padding: 20px; width: 100%; max-width: 400px; }
         .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
         
-        .name-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 5px 0; }
+        /* Layout for Results */
+        #result-area { min-height: 250px; display: flex; flex-direction: column; justify-content: center; }
+        .station-entry { margin-bottom: 15px; }
+        .name-container { display: flex; align-items: center; justify-content: center; gap: 10px; }
         .name { font-size: 2.8rem; font-weight: 900; color: var(--blue); line-height: 1.1; }
         .type-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border); text-transform: uppercase; font-weight: bold; opacity: 0.7; color: var(--text); }
         
-        .city-state { font-size: 1.1rem; color: #666; font-weight: 500; margin-bottom: 10px; }
-        .freq { font-size: 4.5rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 5px 0; }
+        .city-state { font-size: 1.1rem; color: #666; font-weight: 500; margin-bottom: 5px; }
+        .freq { font-size: 3.5rem; font-weight: 200; color: var(--red); letter-spacing: -1px; margin: 0; }
         .dist { font-size: 1rem; margin-top: 5px; font-weight: 600; }
         
         .sig-strong { color: #2d6a4f; } 
         .sig-fringe { color: #d4a373; }  
         .sig-weak { color: #888; }      
 
-        /* Triple Filter Styling */
-        #filter-container { margin: 20px 0; display: none; }
+        #filter-container { margin: 20px 0; }
         .filter-group { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 25px; padding: 4px; gap: 4px; }
-        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 8px 5px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+        .filter-btn { flex: 1; border: none; background: transparent; color: #888; padding: 10px 5px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
         .filter-btn.active { background: var(--blue); color: white; }
 
-        #zip-container { margin-top: 25px; display: none; background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
-        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1.1rem; width: 100px; text-align: center; background: var(--bg); color: var(--text); outline: none; -moz-appearance: textfield; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        #zip-container { margin-top: 15px; display: none; background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); }
+        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1.1rem; width: 100px; text-align: center; background: var(--bg); color: var(--text); outline: none; }
         
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
-        .btn-main { padding: 12px 28px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); font-size: 0.85rem; color: var(--text); font-weight: 600; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 180px; }
-        .btn-zip { background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 8px; margin-left: 8px; font-weight: bold; cursor: pointer; }
-        
-        #result-area { transition: opacity 0.5s ease; }
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px; }
+        .btn-main { padding: 12px 28px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); font-size: 0.85rem; color: var(--text); font-weight: 600; cursor: pointer; width: 180px; }
+        .btn-zip { background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 8px; margin-left: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -56,29 +55,19 @@
         <div id="status" class="label">Locating Signal...</div>
         
         <div id="result-area">
-            <div class="name-container">
-                <div id="name" class="name"></div>
-                <span id="type-tag" class="type-tag" style="display:none;"></span>
             </div>
-            <div id="city-display" class="city-state"></div>
-            <div id="freq" class="freq"></div>
-            <div id="meta" class="dist"></div>
-            
-            <div id="filter-container">
-                <div class="filter-group">
-                    <button id="btn-primary" class="filter-btn" onclick="setMode('primary')">Primary Only</button>
-                    <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All Stations</button>
-                    <button id="btn-boutique" class="filter-btn" onclick="setMode('boutique')">Boutique Only</button>
-                </div>
+
+        <div id="filter-container">
+            <div class="filter-group">
+                <button id="btn-primary" class="filter-btn" onclick="setMode('primary')">Primary Only</button>
+                <button id="btn-all" class="filter-btn active" onclick="setMode('all')">All Stations</button>
+                <button id="btn-boutique" class="filter-btn" onclick="setMode('boutique')">Boutique Only</button>
             </div>
         </div>
 
         <div id="zip-container">
-            <p style="margin-top:0; font-size: 0.9rem;">GPS unavailable. Enter ZIP:</p>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <input type="text" id="zip-input" inputmode="numeric" pattern="[0-9]*" placeholder="08108" maxlength="5">
-                <button class="btn-zip" onclick="useZip()">GO</button>
-            </div>
+            <input type="text" id="zip-input" inputmode="numeric" pattern="[0-9]*" placeholder="08108" maxlength="5">
+            <button class="btn-zip" onclick="useZip()">GO</button>
         </div>
 
         <div class="controls">
@@ -91,7 +80,7 @@
     <script>
         let currentLat = null;
         let currentLon = null;
-        let currentMode = 'all'; // Default mode
+        let currentMode = 'all';
 
         window.onload = refreshSignal;
 
@@ -113,7 +102,6 @@
 
         function setMode(mode) {
             currentMode = mode;
-            // Update UI buttons
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${mode}`).classList.add('active');
             findSignal();
@@ -122,7 +110,6 @@
         function showZipFallback() {
             document.getElementById('status').innerText = "Location Offline";
             document.getElementById('zip-container').style.display = "block";
-            document.getElementById('result-area').style.opacity = "0.15";
         }
 
         async function useZip() {
@@ -134,7 +121,6 @@
                 currentLat = parseFloat(data.places[0].latitude);
                 currentLon = parseFloat(data.places[0].longitude);
                 document.getElementById('zip-container').style.display = "none";
-                document.getElementById('result-area').style.opacity = "1";
                 findSignal();
             } catch (e) { alert("Invalid ZIP."); }
         }
@@ -142,10 +128,9 @@
         function findSignal() {
             if (!currentLat || !currentLon || typeof STATIONS === 'undefined') return;
 
-            let best = null;
+            let bestStations = [];
             let minD = Infinity;
 
-            // Strict filtering based on the 3-button selection
             let filteredList = STATIONS;
             if (currentMode === 'primary') {
                 filteredList = STATIONS.filter(s => s.type === "Primary");
@@ -155,33 +140,45 @@
 
             filteredList.forEach(s => {
                 const d = getD(currentLat, currentLon, s.lat, s.lon);
+                
+                // Logic for finding the closest, allowing multiple for Boutique
                 if (d < minD) {
                     minD = d;
-                    best = s;
+                    bestStations = [s];
+                } else if (currentMode === 'boutique' && Math.abs(d - minD) < 0.1) {
+                    // If we are in Boutique mode and distance is the same, add to the list
+                    bestStations.push(s);
                 }
             });
 
-            if (best) {
-                document.getElementById('status').innerText = "Public Radio Finder";
-                document.getElementById('filter-container').style.display = "block";
-                document.getElementById('name').innerText = best.call;
-                
-                const tag = document.getElementById('type-tag');
-                tag.innerText = best.type;
-                tag.style.display = "inline-block";
-                
-                document.getElementById('city-display').innerText = best.city;
-                document.getElementById('freq').innerText = best.freq + " FM";
+            renderResults(bestStations, minD);
+        }
+
+        function renderResults(stations, distance) {
+            const area = document.getElementById('result-area');
+            area.innerHTML = '';
+            document.getElementById('status').innerText = "Public Radio Finder";
+
+            stations.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'station-entry';
                 
                 let strength = "sig-weak";
                 let statusTxt = "Weak Signal";
-                if (minD < 30) { strength = "sig-strong"; statusTxt = "Strong Signal"; }
-                else if (minD < 60) { strength = "sig-fringe"; statusTxt = "Fringe Signal"; }
-                
-                const meta = document.getElementById('meta');
-                meta.className = "dist " + strength;
-                meta.innerText = `${statusTxt} • ${minD.toFixed(1)} miles`;
-            }
+                if (distance < 30) { strength = "sig-strong"; statusTxt = "Strong Signal"; }
+                else if (distance < 60) { strength = "sig-fringe"; statusTxt = "Fringe Signal"; }
+
+                div.innerHTML = `
+                    <div class="name-container">
+                        <div class="name">${s.call}</div>
+                        <span class="type-tag">${s.type}</span>
+                    </div>
+                    <div class="city-state">${s.city}</div>
+                    <div class="freq">${s.freq} FM</div>
+                    <div class="dist ${strength}">${statusTxt} • ${distance.toFixed(1)} miles</div>
+                `;
+                area.appendChild(div);
+            });
         }
 
         function getD(lat1, lon1, lat2, lon2) {
