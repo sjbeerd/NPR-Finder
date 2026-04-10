@@ -39,7 +39,26 @@
         .filter-active { background: var(--blue); border-color: var(--blue); color: white; }
 
         #zip-container { margin-top: 25px; display: none; background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
-        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100px; text-align: center; background: var(--bg); color: var(--text); outline: none; }
+        
+        /* Fixed Input Styling */
+        input { 
+            padding: 12px; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            font-size: 1.1rem; 
+            width: 100px; 
+            text-align: center; 
+            background: var(--bg); 
+            color: var(--text); 
+            outline: none;
+            /* Removes the number arrows (spinners) */
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
         
         .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
         .btn-main { padding: 12px 28px; border-radius: 25px; border: 1px solid var(--border); background: var(--card); font-size: 0.85rem; color: var(--text); font-weight: 600; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 180px; }
@@ -69,7 +88,7 @@
         <div id="zip-container">
             <p style="margin-top:0; font-size: 0.9rem;">GPS unavailable. Enter ZIP:</p>
             <div style="display:flex; justify-content:center; align-items:center;">
-                <input type="number" id="zip-input" placeholder="08108" pattern="\d*">
+                <input type="text" id="zip-input" inputmode="numeric" pattern="[0-9]*" placeholder="08108" maxlength="5">
                 <button class="btn-zip" onclick="useZip()">GO</button>
             </div>
         </div>
@@ -133,12 +152,11 @@
         }
 
         function findSignal() {
-            if (!currentLat || !currentLon) return;
+            if (!currentLat || !currentLon || typeof STATIONS === 'undefined') return;
 
             let best = null;
             let minD = Infinity;
 
-            // 1. Filter stations based on toggle
             const availableStations = primaryOnly 
                 ? STATIONS.filter(s => s.type !== "Boutique")
                 : STATIONS;
@@ -146,12 +164,10 @@
             availableStations.forEach(s => {
                 const d = getD(currentLat, currentLon, s.lat, s.lon);
                 
-                // 2. Proximity check with Tie-Breaker
                 if (d < minD) {
                     minD = d;
                     best = s;
                 } else if (!primaryOnly && Math.abs(d - minD) < 0.1 && s.type === "Boutique") {
-                    // If distance is identical (same tower), prioritize Boutique in 'All' mode
                     best = s;
                 }
             });
