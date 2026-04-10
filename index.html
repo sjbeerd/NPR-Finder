@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <script src="stations.js?v=1.3"></script>
+    <script src="stations.js?v=1.4"></script>
     <script>
         let lat = null, lon = null, mode = 'all';
 
@@ -121,7 +121,7 @@
             document.getElementById('startup').style.display = "none";
             document.getElementById('filters').style.display = "block";
 
-            // Universal Haversine Math
+            // Universal Distance Math
             let list = STATIONS.map(s => {
                 const dLat = (s.lat - lat) * Math.PI / 180;
                 const dLon = (s.lon - lon) * Math.PI / 180;
@@ -130,6 +130,7 @@
                 return { ...s, d: d };
             });
 
+            // Sort everything by distance (closest first)
             list.sort((a, b) => a.d - b.d);
 
             let results = [];
@@ -143,11 +144,8 @@
             } 
             else if (mode === 'boutique') {
                 const b = list.filter(s => s.type === "Boutique");
-                if (b.length > 0) {
-                    const top = b[0];
-                    // Strict "At same site" check (within 1 mile)
-                    results = b.filter(s => s.d <= (top.d + 1.0));
-                }
+                // Take the top 3 closest boutiques regardless of distance
+                results = b.slice(0, 3);
             }
 
             const area = document.getElementById('result-area');
